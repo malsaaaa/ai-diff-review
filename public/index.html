@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AI Diff Review Dashboard</title>
+  <!-- Google Fonts: Inter -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="index.css">
+</head>
+<body>
+  <div class="app-container">
+    <!-- Header -->
+    <header class="app-header">
+      <div class="header-logo-group">
+        <div class="logo-icon">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+            <polyline points="14 2 14 8 20 8"></polyline>
+            <line x1="16" y1="13" x2="8" y2="13"></line>
+            <line x1="16" y1="17" x2="8" y2="17"></line>
+            <polyline points="10 9 9 9 8 9"></polyline>
+          </svg>
+        </div>
+        <div class="logo-text">
+          <h1>AI Diff Review</h1>
+          <span class="sub-text">Asynchronous Code Quality Pipeline</span>
+        </div>
+      </div>
+      
+      <div class="header-status-group">
+        <div class="status-indicator" id="health-indicator">
+          <span class="status-dot dot-unknown"></span>
+          <span class="status-label">Checking health...</span>
+        </div>
+        <div class="uptime-badge" id="uptime-badge">Uptime: --:--:--</div>
+      </div>
+    </header>
+
+    <!-- Main Grid -->
+    <main class="app-grid">
+      <!-- Left Panel: Input & Controls -->
+      <section class="panel panel-controls">
+        <div class="panel-header">
+          <h2>Review Configuration</h2>
+          <p class="panel-desc">Configure target provider, limits, and authentication token.</p>
+        </div>
+
+        <form id="review-form" class="control-form">
+          <!-- Auth Token Input -->
+          <div class="form-group">
+            <label for="bearer-token">Bearer Token</label>
+            <div class="input-wrapper">
+              <input type="password" id="bearer-token" placeholder="Bearer Authorization Token" required>
+              <button type="button" id="toggle-token-visibility" class="btn-icon">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                  <circle cx="12" cy="12" r="3"></circle>
+                </svg>
+              </button>
+            </div>
+          </div>
+
+          <!-- Horizontal Options Grid -->
+          <div class="form-row">
+            <div class="form-group">
+              <label for="provider-select">Review Provider</label>
+              <select id="provider-select">
+                <option value="mock">mock (Deterministic Rules)</option>
+                <option value="llm">llm (Google Gemini AI)</option>
+              </select>
+            </div>
+
+            <div class="form-group">
+              <label for="max-findings">Max Findings</label>
+              <input type="number" id="max-findings" value="100" min="1" max="1000">
+            </div>
+          </div>
+
+          <!-- Diff Input Area -->
+          <div class="form-group flex-grow">
+            <div class="textarea-header">
+              <label for="diff-input">Unified Diff Contents</label>
+              <div class="textarea-actions">
+                <button type="button" class="btn btn-secondary btn-small" id="load-sample-btn">Load Sample Diff</button>
+                <button type="button" class="btn btn-secondary btn-small" id="clear-diff-btn">Clear</button>
+              </div>
+            </div>
+            <textarea id="diff-input" placeholder="Paste your git diff --git ... here..." required></textarea>
+          </div>
+
+          <!-- Submit Controls -->
+          <div class="form-actions">
+            <button type="submit" class="btn btn-primary btn-block" id="submit-btn">
+              <span>Run Code Review</span>
+              <div class="spinner hidden" id="submit-spinner"></div>
+            </button>
+          </div>
+        </form>
+      </section>
+
+      <!-- Right Panel: Results & Stream -->
+      <section class="panel panel-results">
+        <div class="panel-header">
+          <div class="results-header-row">
+            <h2>Analysis Output</h2>
+            <div class="job-status-badge hidden" id="job-status">idle</div>
+          </div>
+          <p class="panel-desc">Real-time status changes, streaming events, and final scan findings.</p>
+        </div>
+
+        <div class="results-layout">
+          <!-- Job Details & SSE Event Logs -->
+          <div class="results-section job-monitor">
+            <div class="section-header">
+              <h3>Live Stream Log</h3>
+              <div class="stream-stats" id="stream-stats">
+                <span id="stat-chunks" class="badge">Chunks: -</span>
+                <span id="stat-cache" class="badge">Cache: -</span>
+              </div>
+            </div>
+            
+            <div class="log-console-wrapper">
+              <div class="log-console" id="log-console">
+                <div class="console-placeholder">Waiting for review execution...</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Findings List -->
+          <div class="results-section findings-viewer">
+            <div class="section-header">
+              <h3>Detected Findings</h3>
+              <span class="findings-count-badge" id="findings-count">0</span>
+            </div>
+            
+            <div class="findings-list-wrapper">
+              <div class="findings-list" id="findings-list">
+                <div class="findings-placeholder">No findings detected yet.</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <!-- Footer / Specification Info -->
+    <footer class="app-footer">
+      <div class="footer-spec-item">
+        <span class="spec-label">Payload limit:</span>
+        <span class="spec-value" id="spec-payload">--</span>
+      </div>
+      <div class="footer-spec-item">
+        <span class="spec-label">Chunk limit:</span>
+        <span class="spec-value" id="spec-chunk">--</span>
+      </div>
+      <div class="footer-spec-item">
+        <span class="spec-label">Max concurrency:</span>
+        <span class="spec-value" id="spec-concurrency">--</span>
+      </div>
+      <div class="footer-spec-item">
+        <span class="spec-label">Rate limit:</span>
+        <span class="spec-value" id="spec-rate">--</span>
+      </div>
+      <div class="footer-version">
+        <span>Spec: v1.0</span> | <span>Version: v1.0.0</span>
+      </div>
+    </footer>
+  </div>
+
+  <script src="app.js" type="module"></script>
+</body>
+</html>
