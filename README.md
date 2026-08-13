@@ -2,6 +2,8 @@
 
 An asynchronous HTTP service that parses unified diffs and detects code quality and security findings through deterministic rules (mock provider) or structured generative AI (LLM provider). It includes a premium Web Dashboard and Developer Playground.
 
+![Dashboard Playground Preview](public/dashboard-preview.png)
+
 ## 🚀 Live Demo & Playground
 
 The service is fully deployed and accessible live in the cloud:
