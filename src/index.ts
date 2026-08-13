@@ -316,7 +316,7 @@ app.get('/v1/reviews/:jobId/stream', (req: Request, res: Response) => {
 });
 
 // Start Server
-app.listen(PORT, () => {
+app.listen(Number(PORT), '0.0.0.0', () => {
   console.log(`AI Diff Review Service listening on port ${PORT}`);
   console.log(`Health Check: http://localhost:${PORT}/health`);
   console.log(`Service Spec: http://localhost:${PORT}/spec`);
