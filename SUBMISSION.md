@@ -1,16 +1,17 @@
 # Submission: AI Diff Review Service
 
 ## Service Information
-- **Base URL**: `http://localhost:3000` (or your deployed URL)
-- **Default Bearer Token**: `default-super-secret-token` (configurable via `AUTH_BEARER_TOKEN` environment variable)
+- **Base URL**: `https://ai-diff-review-c8pe.onrender.com`
+- **Bearer Token**: `default-super-secret-token`
+- **Repository URL**: `https://github.com/malsaaaa/ai-diff-review`
 
 ## Architecture
-The service is built on Node.js and TypeScript, utilizing Express for the HTTP layer. State (jobs, findings, idempotency keys, and caches) is kept in an in-memory data store that automatically persists as JSON to `data-store.json` using atomic writes.
+The service is built on Node.js and TypeScript, utilizing Express for the HTTP layer. State (jobs, findings, idempotency keys, and caches) is kept in an in-memory data store that automatically persists as JSON to `data-store.json` using debounced background writes.
 Asynchronous job scheduling is managed by a custom FIFO execution queue which limits concurrency to at most 4 active jobs, gracefully queueing further tasks. 
 
 ## Provider Design
-1. **Mock Provider**: A deterministic rules engine parsing hunk headers to reconstruct target files. It evaluates the exact regex patterns and runs code comment-stripping to reliably detect multi-line empty catch blocks.
-2. **LLM Provider**: Uses raw HTTP fetches to interact with the Google Gemini API (model `gemini-2.5-flash`), enforcing structured JSON output schema matching the `Finding` type. It fails gracefully with clear error statuses if credentials are missing or the API is unreachable.
+1. **Mock Provider**: A deterministic, comment-aware rules engine parsing hunk headers to reconstruct target files. It evaluates the exact regex patterns (using lookarounds to prevent false positives on strict comparisons) and runs comment-stripping to reliably detect multi-line empty catch blocks and ignore triggers in comments.
+2. **LLM Provider**: Uses raw HTTP fetches to interact with the Google Gemini API (model `gemini-3.5-flash`), enforcing structured JSON output schema matching the `Finding` type. It fails gracefully with clear error statuses if credentials are missing or the API is unreachable.
 
 ## Verification of Cross-Cutting Behaviors
 We verified all major requirements using an automated integration test suite in `src/test/integration.ts`:
